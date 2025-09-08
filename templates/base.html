@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Sistem Peminjaman Buku - Perpustakaan{% endblock %}</title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/sweetalert-custom.css') }}" />
+
+  {% block extra_head %}{% endblock %}
+  <style>
+    /* ---- Utilities global agar konsisten di semua halaman ---- */
+    :root {
+      --brand-primary: #007bff;
+      --brand-primary-dark: #0056b3;
+      --text-success: #198754;
+      --text-warning: #fd7e14;
+    }
+    .bg-gradient-primary { background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-dark)); }
+    .shadow-lg { box-shadow: 0 1rem 3rem rgba(0,0,0,.175) !important; }
+    .fw-mono { font-family: 'Courier New', monospace; }
+    .avatar-circle {
+      width: 40px; height: 40px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 14px;
+    }
+    .bg-success-subtle { background-color: #d1e7dd; }
+    .bg-warning-subtle { background-color: #fff3cd; }
+    .text-success { color: var(--text-success) !important; }
+    .text-warning { color: var(--text-warning) !important; }
+
+    /* Navbar */
+    .navbar.bg-gradient-primary .navbar-brand { font-weight: 700; letter-spacing: .2px; }
+
+    /* Footer tetap di bawah */
+    body, html { height: 100%; }
+    .layout { min-height: 100vh; display: flex; flex-direction: column; }
+    .layout-main { flex: 1 1 auto; }
+
+    /* Tabel & form sentuhan kecil default */
+    .table th {
+      font-weight: 600; font-size: .85rem; text-transform: uppercase;
+      letter-spacing: .5px; border: none;
+    }
+    .table td { border-color: #e9ecef; vertical-align: middle; }
+    .table tbody tr:hover { background-color: #f8f9fa; transform: translateY(-1px); transition: all .2s ease; }
+    .form-label { font-weight: 600; }
+    .form-control:is(:focus) { box-shadow: 0 0 0 .2rem rgba(13,110,253,.15); }
+
+    @media (max-width: 768px) {
+      .avatar-circle { width: 35px; height: 35px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body class="bg-light">
+  <div class="layout">
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-gradient-primary">
+      <div class="container">
+        <a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}">
+          <i class="fas fa-book-reader me-2"></i>
+          <span>Sistem Peminjaman Buku</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div id="navbarNav" class="collapse navbar-collapse">
+          <!-- (Opsional) menu kanan -->
+          <ul class="navbar-nav ms-auto">
+            <!-- contoh:
+            <li class="nav-item">
+              <a class="nav-link" href="#"><i class="fas fa-circle-info me-1"></i>Tentang</a>
+            </li>
+            -->
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="layout-main">
+      <div class="container-fluid py-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <script>
+              // Tampilkan hanya flash terakhir (atau bisa loop kalau mau semua)
+              (function() {
+                const list = {{ messages|tojson }};
+                list.forEach(([category, message]) => {
+                  Swal.fire({
+                    icon: (category === "success") ? "success" : (category === "warning") ? "warning" : (category === "info") ? "info" : "error",
+                    title: (category === "success") ? "Berhasil!" : (category === "warning") ? "Perhatian!" : (category === "info") ? "Info" : "Terjadi Kesalahan",
+                    text: message,
+                    timer: 3000,
+                    showConfirmButton: false,
+                    customClass: { popup: 'swal2-popup-custom' }
+                  });
+                });
+              })();
+            </script>
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white text-center py-3">
+      <div class="container">
+        <p class="mb-0 small">&copy; {{ 2025 }} Sistem Peminjaman Buku. All rights reserved.</p>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Bootstrap 5 JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Init tooltip & helpers global -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // Bootstrap tooltips
+      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      tooltipTriggerList.map(function (el) { return new bootstrap.Tooltip(el); });
+
+      // Dismiss invalid saat input berubah (bantu UX global)
+      document.querySelectorAll('input.form-control, textarea.form-control, select.form-select').forEach(el => {
+        ['input','change'].forEach(ev => el.addEventListener(ev, () => el.classList.remove('is-invalid')));
+      });
+    });
+  </script>
+
+  <!-- Custom JavaScript -->
+  <script src="{{ url_for('static', filename='js/custom.js') }}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

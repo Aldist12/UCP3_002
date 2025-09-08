@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="row justify-content-center">
+    <div class="col-xl-8 col-lg-10">
+      <div class="card shadow-lg border-0">
+        <div class="card-header bg-gradient-success text-white py-4">
+          <div class="d-flex align-items-center">
+            <div class="icon-circle bg-white bg-opacity-20 me-3">
+              <i class="fas fa-plus-circle fa-lg"></i>
+            </div>
+            <div>
+              <h3 class="mb-1 fw-bold">Tambah Data Peminjaman</h3>
+              <p class="mb-0 opacity-75">Isi formulir di bawah untuk menambah peminjaman baru</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-body p-5">
+          <form method="POST" onsubmit="return validateAll()" novalidate>
+            <!-- Section: Data Peminjam -->
+            <div class="section-header mb-4">
+              <h5 class="section-title">
+                <i class="fas fa-user-circle text-primary me-2"></i>
+                Informasi Peminjam
+              </h5>
+              <hr class="section-divider">
+            </div>
+
+            <div class="row mb-4">
+              <div class="col-lg-6 mb-3">
+                <label for="nama_peminjam" class="form-label fw-semibold">
+                  <i class="fas fa-user text-primary me-2"></i>Nama Peminjam <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control form-control-lg" id="nama_peminjam"
+                       name="nama_peminjam" placeholder="Contoh: Ahmad Ridwan" required>
+                <div class="invalid-feedback">Nama peminjam wajib diisi</div>
+              </div>
+              <div class="col-lg-6 mb-3">
+                <label for="nama_buku" class="form-label fw-semibold">
+                  <i class="fas fa-book text-primary me-2"></i>Nama Buku <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control form-control-lg" id="nama_buku"
+                       name="nama_buku" placeholder="Contoh: Laskar Pelangi" required>
+                <div class="invalid-feedback">Nama buku wajib diisi</div>
+              </div>
+            </div>
+
+            <!-- Section: Tanggal -->
+            <div class="section-header mb-4">
+              <h5 class="section-title">
+                <i class="fas fa-calendar-alt text-warning me-2"></i>
+                Informasi Tanggal
+              </h5>
+              <hr class="section-divider">
+            </div>
+
+            <div class="row mb-4">
+              <div class="col-lg-6 mb-3">
+                <label for="tanggal_peminjaman" class="form-label fw-semibold">
+                  <i class="fas fa-calendar-plus text-warning me-2"></i>Tanggal Peminjaman <span class="text-danger">*</span>
+                </label>
+                <input type="date" class="form-control form-control-lg" id="tanggal_peminjaman"
+                       name="tanggal_peminjaman" value="{{ today }}" required>
+                <div class="invalid-feedback">Tanggal peminjaman wajib diisi</div>
+              </div>
+              <div class="col-lg-6 mb-3">
+                <label for="due_date" class="form-label fw-semibold">
+                  <i class="fas fa-calendar-check text-success me-2"></i>Jatuh Tempo Pengembalian <span class="text-danger">*</span>
+                </label>
+                <input type="date" class="form-control form-control-lg" id="due_date"
+                       name="due_date" required>
+                <small class="form-text text-muted">Isi tanggal batas pengembalian (bukan tanggal aktual pengembalian)</small>
+                <div class="invalid-feedback">Jatuh tempo wajib diisi</div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex justify-content-between align-items-center pt-4 border-top">
+              <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-lg px-4">
+                <i class="fas fa-arrow-left me-2"></i>Kembali ke Daftar
+              </a>
+              <div class="d-flex gap-2">
+                <button type="reset" class="btn btn-outline-warning btn-lg px-4">
+                  <i class="fas fa-undo me-2"></i>Reset Form
+                </button>
+                <button type="submit" class="btn btn-success btn-lg px-5">
+                  <i class="fas fa-save me-2"></i>Simpan Data
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.bg-gradient-success{background:linear-gradient(135deg,#28a745,#20c997)}
+.icon-circle{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.section-title{color:#495057;font-weight:600;margin-bottom:0}
+.section-divider{border:none;height:2px;background:linear-gradient(to right,#007bff,transparent);margin:.5rem 0 1.5rem 0}
+</style>
+
+<script>
+function validateAll(){
+  const nama=document.getElementById('nama_peminjam');
+  const buku=document.getElementById('nama_buku');
+  const tPinjam=document.getElementById('tanggal_peminjaman');
+  const due=document.getElementById('due_date');
+  let ok=true;
+  [nama,buku,tPinjam,due].forEach(el=>{
+    if(!el.value.trim()){el.classList.add('is-invalid');ok=false;}
+    else{el.classList.remove('is-invalid');}
+  });
+  // due >= tPinjam
+  if(tPinjam.value && due.value){
+    const a=new Date(tPinjam.value), b=new Date(due.value);
+    if(b<a){ due.classList.add('is-invalid'); alert('Jatuh tempo tidak boleh lebih awal dari tanggal peminjaman!'); ok=false; }
+  }
+  return ok;
+}
+</script>
+{% endblock %}

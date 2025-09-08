@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      <div class="card shadow-lg border-0">
+        <!-- Header -->
+        <div class="card-header bg-gradient-primary text-white py-4">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h3 class="mb-1 fw-bold">
+                <i class="fas fa-edit me-3"></i>Edit Data Peminjaman
+              </h3>
+              <p class="mb-0 opacity-75">Perbarui informasi peminjaman buku</p>
+            </div>
+            <a href="{{ url_for('index') }}" class="btn btn-light btn-lg shadow-sm">
+              <i class="fas fa-arrow-left me-2"></i>Kembali
+            </a>
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="card-body">
+          <form method="POST" novalidate onsubmit="return validateAll()">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="nama_peminjam" class="form-label">
+                  <i class="fas fa-user text-primary me-1"></i>Nama Peminjam <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" id="nama_peminjam" name="nama_peminjam"
+                       value="{{ data.nama_peminjam }}" required />
+                <div class="invalid-feedback">Nama peminjam wajib diisi.</div>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label for="nama_buku" class="form-label">
+                  <i class="fas fa-book text-primary me-1"></i>Nama Buku <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" id="nama_buku" name="nama_buku"
+                       value="{{ data.nama_buku }}" required />
+                <div class="invalid-feedback">Nama buku wajib diisi.</div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="tanggal_peminjaman" class="form-label">
+                  <i class="fas fa-calendar-alt text-primary me-1"></i>Tanggal Peminjaman <span class="text-danger">*</span>
+                </label>
+                <input type="date" class="form-control" id="tanggal_peminjaman" name="tanggal_peminjaman"
+                       value="{{ data.tanggal_peminjaman }}" required />
+                <div class="invalid-feedback">Tanggal peminjaman wajib diisi.</div>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label for="due_date" class="form-label">
+                  <i class="fas fa-calendar-check text-primary me-1"></i>Jatuh Tempo <span class="text-danger">*</span>
+                </label>
+                <input type="date" class="form-control" id="due_date" name="due_date"
+                       value="{{ data['due_date'] or '' }}" required />
+                <div class="invalid-feedback">Jatuh tempo wajib diisi.</div>
+
+                <!-- Checkbox konfirmasi -->
+                <div class="form-check mt-3">
+                  {% set sudah_kembali = True if data.tanggal_pengembalian else False %}
+                  <input class="form-check-input" type="checkbox" id="cek_kembali" {% if sudah_kembali %}checked{% endif %}>
+                  <label class="form-check-label" for="cek_kembali">
+                    Tandai sebagai <span class="text-success fw-semibold">Telah Dikembalikan</span>
+                  </label>
+                  <div class="form-text">
+                    Jika dicentang, tanggal pengembalian akan diisi otomatis dengan tanggal hari ini.
+                  </div>
+                </div>
+                <!-- Hidden field yang dikirim ke backend -->
+                <input type="hidden" id="tanggal_pengembalian" name="tanggal_pengembalian"
+                       value="{{ data.tanggal_pengembalian or '' }}">
+                <div class="invalid-feedback" id="tglErr" style="display:none;">
+                  Tanggal pengembalian tidak boleh lebih awal dari tanggal peminjaman.
+                </div>
+              </div>
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+              <button type="submit" class="btn btn-warning">
+                <i class="fas fa-sync-alt me-1"></i>Update Data
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Footer ringkas -->
+        <div class="card-footer bg-light py-3">
+          <div class="d-flex align-items-center text-muted small">
+            <i class="fas fa-info-circle me-2"></i>
+            Pastikan data sudah benar sebelum menyimpan.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .bg-gradient-primary { background: linear-gradient(135deg, #007bff, #0056b3); }
+  .shadow-lg { box-shadow: 0 1rem 3rem rgba(0,0,0,.175) !important; }
+  .form-label { font-weight: 600; }
+  .form-control:is(:focus) { box-shadow: 0 0 0 .2rem rgba(13,110,253,.15); }
+</style>
+
+<script>
+  function fmtToday() {
+    const t = new Date();
+    const y = t.getFullYear();
+    const m = ('0'+(t.getMonth()+1)).slice(-2);
+    const d = ('0'+t.getDate()).slice(-2);
+    return `${y}-${m}-${d}`;
+  }
+
+  function setReturnMinDate() {
+    const tPinjam = document.getElementById('tanggal_peminjaman');
+    const due = document.getElementById('due_date');
+    if (due && tPinjam) due.min = tPinjam.value || '';
+  }
+
+  function validateAll() {
+    const namaPeminjam = document.getElementById('nama_peminjam');
+    const namaBuku = document.getElementById('nama_buku');
+    const tPinjam = document.getElementById('tanggal_peminjaman');
+    const due = document.getElementById('due_date');
+    const tKembali = document.getElementById('tanggal_pengembalian');
+    const tglErr = document.getElementById('tglErr');
+
+    let ok = true;
+    [namaPeminjam, namaBuku, tPinjam, due].forEach(el => {
+      if (!el.value.trim()) { el.classList.add('is-invalid'); ok = false; }
+      else { el.classList.remove('is-invalid'); }
+    });
+
+    // Validasi due >= pinjam
+    if (due.value && tPinjam.value && due.value < tPinjam.value) {
+      due.classList.add('is-invalid'); ok = false;
+      alert('Jatuh tempo tidak boleh lebih awal dari tanggal peminjaman!');
+    }
+
+    // Validasi pengembalian (jika ada) >= pinjam
+    tglErr.style.display = 'none';
+    if (tKembali.value && tPinjam.value && tKembali.value < tPinjam.value) {
+      tglErr.style.display = 'block'; ok = false;
+    }
+    return ok;
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const tPinjam = document.getElementById('tanggal_peminjaman');
+    const due = document.getElementById('due_date');
+    const cek = document.getElementById('cek_kembali');
+    const tKembali = document.getElementById('tanggal_pengembalian');
+
+    setReturnMinDate();
+    tPinjam.addEventListener('change', setReturnMinDate);
+
+    // Atur nilai awal checkbox sesuai data yang ada
+    if (tKembali.value) {
+      cek.checked = true;
+    }
+
+    // Ceklis -> isi tgl pengembalian hari ini, uncheck -> kosongkan
+    cek.addEventListener('change', function() {
+      if (cek.checked) {
+        tKembali.value = fmtToday();
+      } else {
+        tKembali.value = '';
+      }
+    });
+
+    // Hilangkan invalid state saat input berubah
+    document.querySelectorAll('input.form-control').forEach(el => {
+      ['input','change'].forEach(ev => el.addEventListener(ev, () => el.classList.remove('is-invalid')));
+    });
+  });
+</script>
+{% endblock %}

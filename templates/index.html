@@ -5,6 +5,7 @@
   <div class="row">
     <div class="col-12">
       <div class="card shadow-lg border-0">
+        <!-- Header -->
         <div class="card-header bg-gradient-primary text-white py-4">
           <div class="d-flex justify-content-between align-items-center">
             <div>
@@ -13,34 +14,46 @@
               </h3>
               <p class="mb-0 opacity-75">Manajemen Peminjaman Buku</p>
             </div>
-            <a href="{{ url_for('tambah') }}" class="btn btn-light btn-lg shadow-sm">
-              <i class="fas fa-plus me-2"></i> Tambah Peminjaman
-            </a>
+            <div class="d-flex">
+              <!-- Form Search -->
+              <form class="d-flex me-2" method="get" action="{{ url_for('index') }}">
+                <input type="text" class="form-control" name="search" placeholder="Cari nama..."
+                       value="{{ search }}">
+                <button class="btn btn-light ms-2" type="submit">
+                  <i class="fas fa-search"></i>
+                </button>
+              </form>
+              <!-- Tambah Button -->
+              <a href="{{ url_for('tambah') }}" class="btn btn-light btn-lg shadow-sm">
+                <i class="fas fa-plus me-2"></i> Tambah Peminjaman
+              </a>
+            </div>
           </div>
         </div>
 
+        <!-- Body -->
         <div class="card-body p-0">
           {% if peminjaman %}
           <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
               <thead class="bg-light">
                 <tr>
-                  <th class="px-4 py-3 text-center" style="width:60px;">No</th>
-                  <th class="px-4 py-3 text-center" style="width:60px;">ID</th>
+                  <th class="px-4 py-3 text-center" style="width: 60px;">No</th>
+                  <th class="px-4 py-3 text-center" style="width: 60px;">ID</th>
                   <th class="px-4 py-3">Nama Peminjam</th>
                   <th class="px-4 py-3">Nama Buku</th>
-                  <th class="px-4 py-3 text-center" style="width:140px;">Tgl Peminjaman</th>
-                  <th class="px-4 py-3 text-center" style="width:140px;">Jatuh Tempo</th>
-                  <th class="px-4 py-3 text-center" style="width:140px;">Tgl Pengembalian</th>
-                  <th class="px-4 py-3 text-center" style="width:140px;">Status</th>
-                  <th class="px-4 py-3 text-center" style="width:120px;">Aksi</th>
+                  <th class="px-4 py-3 text-center" style="width: 140px;">Tgl Peminjaman</th>
+                  <th class="px-4 py-3 text-center" style="width: 140px;">Jatuh Tempo</th>
+                  <th class="px-4 py-3 text-center" style="width: 140px;">Tgl Pengembalian</th>
+                  <th class="px-4 py-3 text-center" style="width: 120px;">Status</th>
+                  <th class="px-4 py-3 text-center" style="width: 120px;">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {% for item in peminjaman %}
                 <tr class="border-bottom">
                   <td class="px-4 py-4 text-center">
-                    <span class="badge bg-secondary">{{ loop.index }}</span>
+                    <span class="badge bg-secondary">{{ loop.index + ((page-1) * 5) }}</span>
                   </td>
                   <td class="px-4 py-4 text-center">
                     <small class="text-muted fw-mono">#{{ item.id }}</small>
@@ -62,18 +75,24 @@
                     </div>
                   </td>
                   <td class="px-4 py-4 text-center">
-                    <small class="text-muted d-block">{{ item.tanggal_peminjaman | indonesian_date }}</small>
+                    <small class="text-muted d-block">
+                      {{ item.tanggal_peminjaman | indonesian_date }}
+                    </small>
                   </td>
                   <td class="px-4 py-4 text-center">
-                    {% if item['due_date'] %}
-                      <small class="text-muted d-block">{{ item['due_date'] | indonesian_date }}</small>
+                    {% if item.due_date %}
+                      <small class="text-danger d-block">
+                        {{ item.due_date | indonesian_date }}
+                      </small>
                     {% else %}
                       <span class="text-muted">-</span>
                     {% endif %}
                   </td>
                   <td class="px-4 py-4 text-center">
                     {% if item.tanggal_pengembalian %}
-                      <small class="text-success d-block">{{ item.tanggal_pengembalian | indonesian_date }}</small>
+                      <small class="text-success d-block">
+                        {{ item.tanggal_pengembalian | indonesian_date }}
+                      </small>
                     {% else %}
                       <span class="text-muted">-</span>
                     {% endif %}
@@ -84,9 +103,9 @@
                         <i class="fas fa-check-circle me-1"></i>Telah Dikembalikan
                       </span>
                     {% else %}
-                      {% if item['due_date'] and today_str > item['due_date'] %}
+                      {% if item.due_date and datetime.now().strftime('%Y-%m-%d') > item.due_date %}
                         <span class="badge bg-danger-subtle text-danger px-3 py-2">
-                          <i class="fas fa-exclamation-triangle me-1"></i>Terlambat Dikembalikan
+                          <i class="fas fa-exclamation-triangle me-1"></i>Terlambat
                         </span>
                       {% else %}
                         <span class="badge bg-warning-subtle text-warning px-3 py-2">
@@ -97,13 +116,18 @@
                   </td>
                   <td class="px-4 py-4">
                     <div class="btn-group" role="group">
-                      <a href="{{ url_for('edit', id=item.id) }}" class="btn btn-sm btn-outline-primary"
-                         data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Data">
+                      <a href="{{ url_for('edit', id=item.id) }}"
+                         class="btn btn-sm btn-outline-primary"
+                         data-bs-toggle="tooltip"
+                         data-bs-placement="top"
+                         title="Edit Data">
                         <i class="fas fa-edit"></i>
                       </a>
                       <button onclick="confirmDelete({{ item.id }}, '{{ item.nama_peminjam }}')"
                               class="btn btn-sm btn-outline-danger"
-                              data-bs-toggle="tooltip" data-bs-placement="top" title="Hapus Data">
+                              data-bs-toggle="tooltip"
+                              data-bs-placement="top"
+                              title="Hapus Data">
                         <i class="fas fa-trash-alt"></i>
                       </button>
                     </div>
@@ -114,26 +138,33 @@
             </table>
           </div>
 
-          <!-- Summary -->
+          <!-- Ringkasan + Pagination -->
           <div class="card-footer bg-light py-3">
             <div class="row text-center">
               <div class="col-md-4">
                 <div class="d-flex align-items-center justify-content-center">
                   <i class="fas fa-list-alt text-primary me-2"></i>
-                  <span class="fw-semibold">Total Data: {{ peminjaman|length }}</span>
+                  <span class="fw-semibold">Total Data: {{ total }}</span>
                 </div>
               </div>
-              <div class="col-md-4">
-                <div class="d-flex align-items-center justify-content-center">
-                  <i class="fas fa-clock text-warning me-2"></i>
-                  <span class="fw-semibold">Dipinjam: {{ peminjaman|selectattr('tanggal_pengembalian', 'none')|list|length }}</span>
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="d-flex align-items-center justify-content-center">
-                  <i class="fas fa-check-circle text-success me-2"></i>
-                  <span class="fw-semibold">Selesai: {{ peminjaman|rejectattr('tanggal_pengembalian', 'none')|list|length }}</span>
-                </div>
+              <div class="col-md-8">
+                {% if total_pages > 1 %}
+                <nav>
+                  <ul class="pagination justify-content-center mb-0">
+                    <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                      <a class="page-link" href="{{ url_for('index', page=page-1, search=search) }}">Sebelumnya</a>
+                    </li>
+                    {% for p in range(1, total_pages+1) %}
+                      <li class="page-item {% if p == page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('index', page=p, search=search) }}">{{ p }}</a>
+                      </li>
+                    {% endfor %}
+                    <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                      <a class="page-link" href="{{ url_for('index', page=page+1, search=search) }}">Berikutnya</a>
+                    </li>
+                  </ul>
+                </nav>
+                {% endif %}
               </div>
             </div>
           </div>
@@ -156,39 +187,73 @@
   </div>
 </div>
 
+<!-- Custom Styles -->
 <style>
-.bg-gradient-primary{background:linear-gradient(135deg,#007bff,#0056b3)}
-.avatar-circle{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
-.fw-mono{font-family:'Courier New',monospace}
-.table th{font-weight:600;font-size:.85rem;text-transform:uppercase;letter-spacing:.5px;border:none}
-.table td{border-color:#e9ecef;vertical-align:middle}
-.table tbody tr:hover{background-color:#f8f9fa;transform:translateY(-1px);transition:all .2s ease}
-.btn-group .btn{border-radius:6px!important;margin:0 2px}
-.badge{font-size:.75rem;font-weight:500}
-.bg-success-subtle{background-color:#d1e7dd}
-.bg-warning-subtle{background-color:#fff3cd}
-.bg-danger-subtle{background-color:#f8d7da}
-.text-success{color:#198754!important}
-.text-warning{color:#fd7e14!important}
-.text-danger{color:#dc3545!important}
-.empty-state{padding:4rem 2rem}
-.shadow-lg{box-shadow:0 1rem 3rem rgba(0,0,0,.175)!important}
-@media (max-width:768px){
-  .table-responsive{font-size:.9rem}
-  .avatar-circle{width:35px;height:35px;font-size:12px}
-  .btn-sm{padding:.25rem .5rem}
+.bg-gradient-primary {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+}
+.avatar-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 14px;
+}
+.fw-mono { font-family: 'Courier New', monospace; }
+.table th {
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: none;
+}
+.table td {
+  border-color: #e9ecef;
+  vertical-align: middle;
+}
+.table tbody tr:hover {
+  background-color: #f8f9fa;
+  transform: translateY(-1px);
+  transition: all 0.2s ease;
+}
+.btn-group .btn {
+  border-radius: 6px !important;
+  margin: 0 2px;
+}
+.badge {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+.bg-success-subtle { background-color: #d1e7dd; }
+.bg-warning-subtle { background-color: #fff3cd; }
+.bg-danger-subtle { background-color: #f8d7da; }
+.text-success { color: #198754 !important; }
+.text-warning { color: #fd7e14 !important; }
+.text-danger { color: #dc3545 !important; }
+.empty-state { padding: 4rem 2rem; }
+.shadow-lg { box-shadow: 0 1rem 3rem rgba(0,0,0,.175) !important; }
+@media (max-width: 768px) {
+  .table-responsive { font-size: 0.9rem; }
+  .avatar-circle { width: 35px; height: 35px; font-size: 12px; }
+  .btn-sm { padding: 0.25rem 0.5rem; }
 }
 </style>
 
+<!-- JS -->
 <script>
 function confirmDelete(id, namaPeminjam) {
   if (confirm(`Apakah Anda yakin ingin menghapus data peminjaman atas nama "${namaPeminjam}"?\n\nData yang sudah dihapus tidak dapat dikembalikan.`)) {
     window.location.href = `/hapus/${id}`;
   }
 }
-document.addEventListener('DOMContentLoaded', function () {
-  var tooltipTriggerList=[].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-  tooltipTriggerList.map(function (el) { return new bootstrap.Tooltip(el); });
+document.addEventListener('DOMContentLoaded', function() {
+  var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+  tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl);
+  });
 });
 </script>
 {% endblock %}

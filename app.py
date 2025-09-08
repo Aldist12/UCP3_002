@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 import sqlite3
 from datetime import datetime
+import math
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'
@@ -37,15 +38,10 @@ def init_db():
 # --- Filters & globals ---
 @app.context_processor
 def inject_globals():
-    # sediakan datetime & today_str ke template
     return {
         'datetime': datetime,
         'today_str': datetime.now().strftime('%Y-%m-%d')
     }
-
-@app.template_filter('strptime')
-def strptime_filter(date_string, format_string):
-    return datetime.strptime(date_string, format_string)
 
 @app.template_filter('indonesian_date')
 def indonesian_date_filter(date_string):
@@ -67,26 +63,54 @@ def indonesian_date_filter(date_string):
 @app.route('/')
 def index():
     conn = get_db_connection()
-    peminjaman = conn.execute('SELECT * FROM peminjaman ORDER BY id DESC').fetchall()
+
+    # Ambil parameter search & page
+    search = request.args.get('search', '').strip()
+    page = request.args.get('page', 1, type=int)
+    per_page = 5
+
+    if search:
+        like_query = f"%{search}%"
+        total = conn.execute(
+            "SELECT COUNT(*) FROM peminjaman WHERE nama_peminjam LIKE ?", (like_query,)
+        ).fetchone()[0]
+        peminjaman = conn.execute(
+            "SELECT * FROM peminjaman WHERE nama_peminjam LIKE ? ORDER BY id DESC LIMIT ? OFFSET ?",
+            (like_query, per_page, (page - 1) * per_page)
+        ).fetchall()
+    else:
+        total = conn.execute("SELECT COUNT(*) FROM peminjaman").fetchone()[0]
+        peminjaman = conn.execute(
+            "SELECT * FROM peminjaman ORDER BY id DESC LIMIT ? OFFSET ?",
+            (per_page, (page - 1) * per_page)
+        ).fetchall()
+
     conn.close()
-    # today_str sudah diinject lewat context_processor
-    return render_template('index.html', peminjaman=peminjaman)
+
+    total_pages = math.ceil(total / per_page)
+
+    return render_template(
+        'index.html',
+        peminjaman=peminjaman,
+        page=page,
+        total_pages=total_pages,
+        search=search,
+        total=total
+    )
 
 @app.route('/tambah', methods=['GET', 'POST'])
 def tambah():
     if request.method == 'POST':
         nama_peminjam = request.form.get('nama_peminjam', '').strip()
         nama_buku = request.form.get('nama_buku', '').strip()
-        tanggal_peminjaman = request.form.get('tanggal_peminjaman')  # yyyy-mm-dd
-        due_date = request.form.get('due_date')  # yyyy-mm-dd (Jatuh Tempo)
-        # Saat tambah, tanggal_pengembalian (aktual) harus NULL/None
+        tanggal_peminjaman = request.form.get('tanggal_peminjaman')
+        due_date = request.form.get('due_date')
         tanggal_pengembalian = None
 
         if not nama_peminjam or not nama_buku or not tanggal_peminjaman or not due_date:
             flash('Semua field bertanda * wajib diisi!', 'error')
             return redirect(url_for('tambah'))
 
-        # Validasi sederhana: due_date >= tanggal_peminjaman
         try:
             if datetime.strptime(due_date, '%Y-%m-%d') < datetime.strptime(tanggal_peminjaman, '%Y-%m-%d'):
                 flash('Jatuh tempo tidak boleh lebih awal dari tanggal peminjaman.', 'error')
@@ -118,7 +142,6 @@ def edit(id):
         nama_buku = request.form.get('nama_buku', '').strip()
         tanggal_peminjaman = request.form.get('tanggal_peminjaman')
         due_date = request.form.get('due_date')
-        # tanggal_pengembalian aktual: dikirim via hidden input saat checkbox dicentang
         tanggal_pengembalian = request.form.get('tanggal_pengembalian') or None
 
         if not nama_peminjam or not nama_buku or not tanggal_peminjaman or not due_date:
@@ -126,7 +149,6 @@ def edit(id):
             conn.close()
             return redirect(url_for('edit', id=id))
 
-        # Validasi: due_date >= tanggal_peminjaman
         try:
             if datetime.strptime(due_date, '%Y-%m-%d') < datetime.strptime(tanggal_peminjaman, '%Y-%m-%d'):
                 flash('Jatuh tempo tidak boleh lebih awal dari tanggal peminjaman.', 'error')
@@ -137,7 +159,6 @@ def edit(id):
             conn.close()
             return redirect(url_for('edit', id=id))
 
-        # Validasi: jika tanggal_pengembalian diisi, harus >= tanggal_peminjaman
         if tanggal_pengembalian:
             try:
                 if datetime.strptime(tanggal_pengembalian, '%Y-%m-%d') < datetime.strptime(tanggal_peminjaman, '%Y-%m-%d'):
